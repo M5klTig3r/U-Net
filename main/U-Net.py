@@ -61,6 +61,9 @@ if cuda:
 for epoch in range(300):
     for i, (images, labels) in enumerate(dataloader):
 
+        if i == 0:
+            continue
+
         x = Variable(images.type(FloatTensor))
         output = unet(x)
 
