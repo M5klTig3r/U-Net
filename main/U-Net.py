@@ -50,15 +50,18 @@ dataloader = torch.utils.data.DataLoader(datasets.ImageFolder(
 
 encoder = Encoder()
 # input image
-for i, (images, labels) in enumerate(dataloader):
+for epoch in range(10):
+    for i, (images, labels) in enumerate(dataloader):
 
-    x = Variable(images.type(FloatTensor))
+        x = Variable(images.type(FloatTensor))
 
-    unet = UNet()
-    unet(x).shape
+        unet = UNet()
+        unet(x).shape
 
-    print(
-        "[Epoch %d/%d] [Batch %d/%d]"
-        % (0, 1, i, len(dataloader))
-    )
-    sample_image(n_row=10, batches_done=i, current_epoch=0, real_images=x)
+        print(
+            "[Epoch %d/%d] [Batch %d/%d]"
+            % (0, 10, i, len(dataloader))
+        )
+        batches_done = epoch * len(dataloader) + i
+        if batches_done % 50 == 0:
+            sample_image(n_row=10, batches_done=batches_done, current_epoch=epoch, real_images=x)
