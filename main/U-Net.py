@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torchvision.datasets as datasets
 import torchvision.transforms as transforms
-from torch import FloatTensor
 from torchvision.utils import save_image
 from torch.autograd import Variable
 
@@ -11,17 +10,18 @@ from Decoder import Decoder
 
 
 class UNet(nn.Module):
-    def __init__(self, enc_chs=(1, 64, 128, 256, 512, 1024), dec_chs=(1024, 512, 256, 128, 64), num_class=1,
+    def __init__(self, enc_chs=(1, 64, 128, 256, 512, 1024), dec_chs=(1024, 512, 256, 128, 64, 1), num_class=1,
                  retain_dim=False):
         super().__init__()
-        self.encoder = Encoder(enc_chs)
-        self.decoder = Decoder(dec_chs)
-        self.head = nn.Conv2d(dec_chs[-1], num_class, (1, 1))
+        self.encoder = Encoder()
+        self.decoder = Decoder()
+        self.head = nn.Sequential(nn.ConvTranspose2d(128, 1, kernel_size=(4, 4), stride=(2, 2), padding=(1, 1)),
+                                  nn.Tanh())
         self.retain_dim = retain_dim
 
     def forward(self, x):
         enc_ftrs = self.encoder(x)
-        out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][1:])
+        out = self.decoder(enc_ftrs[::-1][0], enc_ftrs[::-1][0:])
         out = self.head(out)
         return out
 
@@ -62,7 +62,6 @@ for epoch in range(300):
     for i, (images, labels) in enumerate(dataloader):
 
         x = Variable(images.type(FloatTensor))
-
         output = unet(x)
 
         print(
