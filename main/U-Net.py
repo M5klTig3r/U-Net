@@ -83,14 +83,14 @@ for epoch in range(300):
         # loss = nn.CrossEntropyLoss(output, x)
 
         # Squared Similarity Metric
-        ssim_loss = 1 - ssim(output, groundTruth, data_range=255, size_average=True)
+        ssim_val = ssim(output, groundTruth, data_range=255, size_average=False)  # return (N,)
 
-        ssim_loss.backward()
+        ssim_val.backward()
         optimizer.step()
 
         print(
             f"[Epoch %d/%d] [Batch %d/%d] [Image size {output.shape}] [UNet loss: %f]"
-            % (epoch, 300, i, len(dataloader), ssim_loss)
+            % (epoch, 300, i, len(dataloader), ssim_val)
         )
         batches_done = epoch * len(dataloader) + i
         if batches_done % 100 == 0:
