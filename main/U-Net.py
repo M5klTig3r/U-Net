@@ -5,7 +5,7 @@ import torchvision.transforms as transforms
 from torchvision.utils import save_image
 from torch.autograd import Variable
 
-from pytorch_msssim import ssim, ms_ssim
+from pytorch_msssim import ssim, ms_ssim, SSIM, MS_SSIM
 
 from Encode import Encoder
 from Decoder import Decoder
@@ -59,7 +59,7 @@ if cuda:
     print(f"Cuda: {cuda}")
     unet.cuda()
 
-optimizer = torch.optim.Adam(unet.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(unet.parameters(), lr=0.0002)
 
 groundTruth = 0
 for j, (images, labels) in enumerate(dataloader):
@@ -79,19 +79,19 @@ for epoch in range(300):
 
         output = unet(x)
 
-        # CrossEntropy
-        # loss = nn.CrossEntropyLoss(output, x)
-
         # Squared Similarity Metric
-        ssim_val = ssim(output, groundTruth, data_range=255, size_average=False)  # return (N,)
+        ssim_val = ssim(output, groundTruth).item()
+        print(f"Initial ssim: {ssim_val}")
 
-        ssim_val.backward()
+        ssim_loss = SSIM(win_size=11, win_sigma=1.5, data_range=1, size_average=True, channel=1)
+        _ssim_loss = 1 - ssim_loss(output, groundTruth)
+        _ssim_loss.backward()
         optimizer.step()
 
         print(
-            f"[Epoch %d/%d] [Batch %d/%d] [Image size {output.shape}] [UNet loss: %f]"
+            f"[Epoch %d/%d] [Batch %d/%d] [Image size {output.shape}] [SSIM loss: %f] "
             % (epoch, 300, i, len(dataloader), ssim_val)
         )
         batches_done = epoch * len(dataloader) + i
-        if batches_done % 100 == 0:
+        if batches_done % 10 == 0:
             sample_image(n_row=10, batches_done=batches_done, current_epoch=epoch, real_images=x)
