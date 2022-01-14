@@ -36,8 +36,8 @@ def sample_image(n_row, batches_done, current_epoch, real_images):
 
 
 dataloader = torch.utils.data.DataLoader(datasets.ImageFolder(
-    "../../PMSD/ImageDenoising(Averaging)Cubes/sorted/cut_eye_no_needle/86271bd2-31fb-436f-9e31-9ec5a3a4f7648203/bigVol_9mm",
-    # "../../iOCT/bigVol_9mm",
+    #"../../PMSD/ImageDenoising(Averaging)Cubes/sorted/cut_eye_no_needle/86271bd2-31fb-436f-9e31-9ec5a3a4f7648203/bigVol_9mm",
+    "../../iOCT/bigVol_9mm",
     transform=transforms.Compose(
         [transforms.Grayscale(num_output_channels=1),
          transforms.Resize((512, 512)),
@@ -74,6 +74,7 @@ for epoch in range(300):
             continue
 
         x = Variable(images.type(FloatTensor))
+        groundTruth = groundTruth.cuda()
 
         optimizer.zero_grad()
 
@@ -93,5 +94,5 @@ for epoch in range(300):
             % (epoch, 300, i, len(dataloader), ssim_val)
         )
         batches_done = epoch * len(dataloader) + i
-        if batches_done % 10 == 0:
+        if batches_done % 100 == 0:
             sample_image(n_row=10, batches_done=batches_done, current_epoch=epoch, real_images=x)
