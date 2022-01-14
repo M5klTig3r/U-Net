@@ -5,6 +5,8 @@ import torchvision.transforms as transforms
 from torchvision.utils import save_image
 from torch.autograd import Variable
 
+from pytorch_msssim import ssim, ms_ssim
+
 from Encode import Encoder
 from Decoder import Decoder
 
@@ -34,8 +36,8 @@ def sample_image(n_row, batches_done, current_epoch, real_images):
 
 
 dataloader = torch.utils.data.DataLoader(datasets.ImageFolder(
+    "../../PMSD/ImageDenoising(Averaging)Cubes/sorted/cut_eye_no_needle/86271bd2-31fb-436f-9e31-9ec5a3a4f7648203/bigVol_9mm",
     # "../../iOCT/bigVol_9mm",
-    "../../iOCT/bigVol_9mm",
     transform=transforms.Compose(
         [transforms.Grayscale(num_output_channels=1),
          transforms.Resize((512, 512)),
@@ -57,6 +59,13 @@ if cuda:
     print(f"Cuda: {cuda}")
     unet.cuda()
 
+optimizer = torch.optim.Adam(unet.parameters(), lr=0.01)
+
+groundTruth = 0
+for j, (images, labels) in enumerate(dataloader):
+    if j == 1:
+        groundTruth = images
+
 # input image
 for epoch in range(300):
     for i, (images, labels) in enumerate(dataloader):
@@ -65,11 +74,23 @@ for epoch in range(300):
             continue
 
         x = Variable(images.type(FloatTensor))
+
+        optimizer.zero_grad()
+
         output = unet(x)
 
+        # CrossEntropy
+        # loss = nn.CrossEntropyLoss(output, x)
+
+        # Squared Similarity Metric
+        ssim_loss = 1 - ssim(output, groundTruth, data_range=255, size_average=True)
+
+        ssim_loss.backward()
+        optimizer.step()
+
         print(
-            f"[Epoch %d/%d] [Batch %d/%d] [Image size {output.shape}]"
-            % (epoch, 300, i, len(dataloader))
+            f"[Epoch %d/%d] [Batch %d/%d] [Image size {output.shape}] [UNet loss: %f]"
+            % (epoch, 300, i, len(dataloader), ssim_loss)
         )
         batches_done = epoch * len(dataloader) + i
         if batches_done % 100 == 0:
